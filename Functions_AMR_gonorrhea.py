@@ -87,6 +87,14 @@ def get_test_train_data(CIP_data_no_drop, year, feature_names, years_train, mode
     return (test_data, train_data, X_train, y_train, X_test, y_test, cipro_R_prev)
 
 
+def get_feature_effects(feature_names, model_fit, X_test, y_test):
+    PI = permutation_importance(
+        model_fit, X_test, y_test, n_repeats=10, random_state=42
+    )
+
+    return PI.importances_mean
+
+
 def f1_mcc_score_threshold(threshold_seq, y_predict_proba, y_test):
 
     f1_score_seq = []
