@@ -68,25 +68,6 @@ def get_best_features(feature_names, model_fit, X_test, y_test):
 oversample = RandomOverSampler(sampling_strategy=0.5, random_state=42)
 
 
-def get_test_train_data_overfit(CIP_data_no_drop, year, feature_names, oversample_size):
-    years_train = np.array(range(year - 5, year))
-
-    # first do for all clinics
-    train_data = CIP_data_no_drop.loc[CIP_data_no_drop["YEAR"].isin(years_train)]
-    X_train = train_data[
-        feature_names
-    ]  # need to consider all columns BEFORE feature engineering
-    y_train = 1 - train_data["Susceptible"]
-    X_train, y_train = oversample.fit_resample(X_train, y_train)
-    # test
-    test_data = CIP_data_no_drop.loc[CIP_data_no_drop["YEAR"].isin([year])]
-    X_test = test_data[feature_names]
-    y_test = 1 - test_data["Susceptible"]
-    cipro_R = y_test.sum() / len(y_test)
-    X_test, y_test = oversample.fit_resample(X_test, y_test)
-    return (test_data, train_data, X_train, y_train, X_test, y_test, cipro_R)
-
-
 def get_test_train_data(CIP_data_no_drop, year, feature_names, years_train, model_type):
 
     train_data = CIP_data_no_drop.loc[CIP_data_no_drop["YEAR"].isin(years_train)]
