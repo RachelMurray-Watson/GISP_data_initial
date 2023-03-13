@@ -3,7 +3,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score, matthews_corrcoef
-
+import numpy as np
 
 ### Create functions for the gonorrhea AMR paper
 
@@ -58,7 +58,7 @@ def get_best_features(feature_names, model_fit, X_test, y_test):
     )
     important_features = []
     for q in PI.importances_mean.argsort()[::-1]:
-        if PI.importances_mean[q] - 2 * PI.importances_std[q] > 0:
+        if PI.importances_mean[q] - PI.importances_std[q] > 0:
             important_features.append(
                 feature_names[q]
             )  # works cos they are in same order as the x columns
@@ -89,9 +89,10 @@ def get_test_train_data(CIP_data_no_drop, year, feature_names, years_train, mode
 
 def get_feature_effects(feature_names, model_fit, X_test, y_test):
     PI = permutation_importance(
-        model_fit, X_test, y_test, n_repeats=10, random_state=42)
+        model_fit, X_test, y_test, n_repeats=10, random_state=42
+    )
 
-    return (PI.importances_mean)
+    return PI.importances_mean
 
 
 def f1_mcc_score_threshold(threshold_seq, y_predict_proba, y_test):
