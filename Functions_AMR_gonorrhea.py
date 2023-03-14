@@ -83,7 +83,7 @@ def get_test_train_data(CIP_data_no_drop, year, feature_names, years_train, mode
     if (model_type == 1) | (model_type == 2):
         X_train, y_train = oversample.fit_resample(X_train, y_train)
         X_test, y_test = oversample.fit_resample(X_test, y_test)
-
+        print("Oversample")
     return (test_data, train_data, X_train, y_train, X_test, y_test, cipro_R_prev)
 
 
