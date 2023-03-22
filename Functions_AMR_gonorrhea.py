@@ -65,7 +65,7 @@ def get_best_features(feature_names, model_fit, X_test, y_test):
     return important_features
 
 
-oversample = RandomOverSampler(sampling_strategy=0.5, random_state=42)
+oversample = RandomOverSampler(sampling_strategy=0.5, random_state=10)
 
 
 def get_test_train_data(CIP_data_no_drop, year, feature_names, years_train, model_type):
@@ -82,7 +82,7 @@ def get_test_train_data(CIP_data_no_drop, year, feature_names, years_train, mode
     cipro_R_prev = y_test.sum() / len(y_test)
     if (model_type == 1) | (model_type == 2):
         X_train, y_train = oversample.fit_resample(X_train, y_train)
-        X_test, y_test = oversample.fit_resample(X_test, y_test)
+        # X_test, y_test = oversample.fit_resample(X_test, y_test)
         print("Oversample")
     return (test_data, train_data, X_train, y_train, X_test, y_test, cipro_R_prev)
 
