@@ -46,7 +46,7 @@ def effective_unnecessary_threshold(
 
 def get_best_hyperparameters(model, cv, space, X_train, y_train):
     search = RandomizedSearchCV(
-        model, space, scoring="roc_auc", n_iter=1, n_jobs=-1, cv=cv, random_state=1
+        model, space, scoring="roc_auc", n_iter=10, n_jobs=-1, cv=cv, random_state=1
     )
     result = search.fit(X_train, y_train)
     return result.best_params_
@@ -54,7 +54,7 @@ def get_best_hyperparameters(model, cv, space, X_train, y_train):
 
 def get_best_features(feature_names, model_fit, X_test, y_test):
     PI = permutation_importance(
-        model_fit, X_test, y_test, n_repeats=10, random_state=42
+        model_fit, X_test, y_test, n_repeats=100, random_state=42
     )
     important_features = []
     for q in PI.importances_mean.argsort()[::-1]:
