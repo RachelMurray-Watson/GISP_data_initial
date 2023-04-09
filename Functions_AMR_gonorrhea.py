@@ -65,7 +65,7 @@ def get_best_features(feature_names, model_fit, X_test, y_test):
     return important_features
 
 
-oversample = RandomOverSampler(sampling_strategy=0.5, random_state=10)
+oversample = RandomOverSampler(sampling_strategy="minority", random_state=10)
 
 
 def get_test_train_data(CIP_data_no_drop, year, feature_names, years_train, model_type):
