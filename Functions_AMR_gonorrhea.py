@@ -4,6 +4,7 @@ from sklearn.inspection import permutation_importance
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score, matthews_corrcoef
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder
 
 ### Create functions for the gonorrhea AMR paper
 
