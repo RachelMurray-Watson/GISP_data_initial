@@ -5,6 +5,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score, matthews_corrcoef
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
+import pandas as pd
 
 ### Create functions for the gonorrhea AMR paper
 
@@ -118,3 +119,98 @@ def encoder_for_GISP(data, column):
     col_names = list(data.columns) + encoder_categories[0:]
     combined_data.columns = col_names
     return combined_data
+
+
+#### now try bootstrapping w/ feature selection
+iterations = 100
+## DO NOT SAMPLE THE TARGET DATA
+def bootstrap_auROC(iterations, model, train_data, test_data, y_test, ROC_actual):
+    # 1. Find apparent model performance
+    bootstrapped_stats = []
+    for i in range(iterations):
+        # 2. (A) Sample all individuals from training data w/replacement
+
+        sample_train = train_data.sample(
+            frac=1, replace=True
+        )  ##(a) sample n individuals with replacement
+
+        X_sample_train = sample_train[feature_names]
+        y_sample_train = 1 - sample_train["Susceptible"]
+
+        if model_type in [1, 2]:
+            X_sample_train, y_sample_train = oversample.fit_resample(
+                X_sample_train, y_sample_train
+            )
+
+        #  (B) Develop predictive model and find apparent performance of new sample data
+        # best_hyperparameters1 = get_best_hyperparameters(model_nn, cv, space, X_train, y_train)
+        # model_nn = MLPClassifier(solver = best_hyperparameters1['solver'], activation = best_hyperparameters1['activation'], max_iter = 5000 ,hidden_layer_sizes= best_hyperparameters1['hidden_layer_sizes'], alpha =  best_hyperparameters1['alpha'], random_state=337, learning_rate =best_hyperparameters1['learning_rate'])
+        # need original test data - without any feature selection
+        X_test_bootstrap = test_data[feature_names]
+        model_fit = model.fit(X_sample_train, y_sample_train)
+        important_features_sample = get_best_features(
+            feature_names, model_fit, X_test_bootstrap, y_test
+        )
+        while len(important_features_sample) == 0:
+            X_sample_train = sample_train[feature_names]
+            y_sample_train = 1 - sample_train["Susceptible"]
+            if model_type in [1, 2]:
+                X_sample_train, y_sample_train = oversample.fit_resample(
+                    X_sample_train, y_sample_train
+                )
+            model_fit = model.fit(X_sample_train, y_sample_train)
+            important_features_sample = get_best_features(
+                feature_names, model_fit, X_test_bootstrap, y_test
+            )
+        #
+        X_sample_train = X_sample_train[important_features_sample]
+        # best_hyperparameters2 = get_best_hyperparameters(model_nn, cv, space, X_sample_train, X_sample_test)
+        # model_nn = MLPClassifier(solver = best_hyperparameters2['solver'], activation = best_hyperparameters2['activation'], max_iter = 5000 ,hidden_layer_sizes= best_hyperparameters2['hidden_layer_sizes'], alpha =  best_hyperparameters2['alpha'], random_state=337, learning_rate =best_hyperparameters1['learning_rate'])
+
+        model_fit = model.fit(X_sample_train, y_sample_train)
+        model_name = (
+            "CIP_bootstrap_" + str(model_type) + "_" + str(year) + "_" + str(i) + ".sav"
+        )
+        X_data_name = (
+            "CIP_bootstrap_X_"
+            + str(model_type)
+            + "_"
+            + str(year)
+            + "_"
+            + str(i)
+            + ".csv"
+        )
+        y_data_name = (
+            "CIP_bootstrap_y_"
+            + str(model_type)
+            + "_"
+            + str(year)
+            + "_"
+            + str(i)
+            + ".csv"
+        )
+        X_sample_train.to_csv(X_data_name)
+        y_sample_train.to_csv(y_data_name)
+        pickle.dump(model_fit, open(model_name, "wb"))
+        #  (C) Performance of predictive model on original sample (i.e. original training population, X_test, with new selected features)
+        X_test_bootstrap = X_test_bootstrap[important_features_sample]
+        y_bootstrap_predict = model_fit.predict(X_test_bootstrap)
+        ROC_AUC_bootstrap_test_performance = metrics.roc_auc_score(
+            y_test, y_bootstrap_predict
+        )
+        ### (D) Calculate estimate fo variance  by getting (B) - (D)
+
+        difference = (
+            ROC_AUC_bootstrap_test_performance - ROC_actual
+        )  ## according to https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2014/resources/mit18_05s14_reading24/
+
+        bootstrapped_stats.append({"Difference": difference})  # ,
+
+    bootstrapped_stats = pd.DataFrame(bootstrapped_stats)
+    ## Step 3: Get average optimization
+
+    lower_quartile = np.percentile(bootstrapped_stats["Difference"], 2.5)
+    upper_quartile = np.percentile(bootstrapped_stats["Difference"], 97.5)
+    ## Step 4: Get optimization-corrected performance
+
+    return lower_quartile, upper_quartile
